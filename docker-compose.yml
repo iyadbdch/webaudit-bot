@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - DB_TYPE=sqlite
+      - DB_PATH=/data/webaudit.db
+      - OPENWA_API_URL=http://openwa:2785/api
+      - OPENWA_API_KEY=${OPENWA_API_KEY:-your-api-key}
+      - OPENWA_SESSION_ID=${OPENWA_SESSION_ID:-default}
+      - WHATSAPP_ENABLED=${WHATSAPP_ENABLED:-false}
+      - WHATSAPP_NOTIFY_CHAT_ID=${WHATSAPP_NOTIFY_CHAT_ID:-}
+    volumes:
+      - webaudit_data:/data
+    depends_on:
+      openwa:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - webaudit_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - webaudit_net
+
+  openwa:
+    image: rmyndharis/openwa:latest
+    ports:
+      - "2785:2785"
+      - "2886:2886"
+    environment:
+      - DB_TYPE=sqlite
+      - API_KEY=${OPENWA_API_KEY:-your-api-key}
+    volumes:
+      - openwa_data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:2785/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - webaudit_net
+
+volumes:
+  webaudit_data:
+  openwa_data:
+
+networks:
+  webaudit_net:
+    driver: bridge

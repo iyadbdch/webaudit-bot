@@ -1,0 +1,14 @@
+node_modules/
+dist/
+data/
+.env
+*.db
+*.db-journal
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+*.log
+audit_out.txt
+audit_err.txt
+msg.json
